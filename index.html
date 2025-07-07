@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#1e1e1e"> 
+<title>Pixel Art App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #1e1e1e;
+      color: white;
+      touch-action: none;
+    }
+    #controls {
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: #2e2e2e;
+      width: 100%;
+    }
+    canvas {
+      background: white;
+      touch-action: none;
+      border: 1px solid #ccc;
+    }
+    input[type="color"], button {
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+    }
+    button {
+      background: #444;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #666;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <input type="color" id="colorPicker" value="#000000">
+  <button onclick="clearCanvas()">Clear</button>
+  <button onclick="saveCanvas()">Save</button>
+</div>
+
+<canvas id="canvas" width="320" height="320"></canvas>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const colorPicker = document.getElementById('colorPicker');
+  const gridSize = 16;
+  const pixelSize = canvas.width / gridSize;
+
+  // Fill white background
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw grid (optional)
+  function drawGrid() {
+    ctx.strokeStyle = '#ccc';
+    for (let x = 0; x <= canvas.width; x += pixelSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += pixelSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+  }
+  drawGrid();
+
+  function getCanvasPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: Math.floor((clientX - rect.left) / pixelSize),
+      y: Math.floor((clientY - rect.top) / pixelSize)
+    };
+  }
+
+  function drawPixel(x, y, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+    ctx.strokeStyle = '#ccc';
+    ctx.strokeRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+  }
+
+  let painting = false;
+
+  function handleDraw(e) {
+    if (!painting) return;
+    const pos = getCanvasPos(e);
+    drawPixel(pos.x, pos.y, colorPicker.value);
+  }
+
+  canvas.addEventListener('mousedown', e => { painting = true; handleDraw(e); });
+  canvas.addEventListener('mousemove', handleDraw);
+  canvas.addEventListener('mouseup', () => painting = false);
+  canvas.addEventListener('mouseleave', () => painting = false);
+
+  // Touch events
+  canvas.addEventListener('touchstart', e => { painting = true; handleDraw(e); });
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); handleDraw(e); });
+  canvas.addEventListener('touchend', () => painting = false);
+
+  function clearCanvas() {
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+  }
+
+  function saveCanvas() {
+    const link = document.createElement('a');
+    link.download = 'pixel-art.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(() => {
+      console.log('Service Worker Registered');
+    });
+  }
+</script>
+</body>
+</html>
